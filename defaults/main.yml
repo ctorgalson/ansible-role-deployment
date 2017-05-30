@@ -1,0 +1,48 @@
+---
+deployment_timestamp_pattern: "%Y-%m-%dT%H-%M-%SZ"
+deployment_owner: "example"
+deployment_group: "example"
+deployment_server_user: "www-data"
+deployment_git_repo: "git@github.com:example/example.com.git"
+deployment_git_dest_base: "example.com"
+deployment_directory_pattern: "{{ deployment_git_dest_base }}-*"
+deployment_git_accept_hostkey: false
+deployment_working_dir: "/var/www/example/deployments"
+deployment_current_dir: "/var/www/example"
+deployment_file_operations: []
+#  - {
+#    "dest": "{{ deployment_working_dir }}/{{ deployment_git_dest_base }}-{{ deployment_deployment_8601.stdout }}",
+#    "state": directory,
+#    "owner": "{{ deployment_owner }}",
+#    "group": "{{ deployment_server_user }}",
+#    "mode": "ug=rwx,o=rx",
+#    "recurse": no
+#  }
+#  - {
+#    "src": "example.txt",
+#    "dest": "example.txt",
+#    "state": link,
+#    "owner": "{{ deployment_owner }}",
+#    "group": "{{ deployment_group }}"
+#  }
+deployment_preserve_past_deployments: 3
+deployment_delete_past_deployments: false
+
+deployment_current_deployment_directory:
+  - {
+    "dest": "{{ deployment_working_dir }}/{{ deployment_git_dest_base }}-{{ deployment_deployment_8601.stdout }}",
+    "state": directory,
+    "owner": "{{ deployment_owner }}",
+    "group": "{{ deployment_group }}",
+    "mode": "u=rwx,go=rx",
+    "recurse": yes
+  }
+
+deployment_database_type: mysql
+deployment_database_name: "example-db"
+deployment_database_user: "example-user"
+deployment_database_password: "example-password"
+deployment_database_host: "localhost"
+deployment_database_priv: "{{ deployment_database_name }}.*:ALL"
+deployment_database_dump_path: "{{ deployment_working_dir }}/{{ deployment_last_deployment_directory.stdout }}/{{ deployment_database_name }}.sql"
+deployment_application_role: ''

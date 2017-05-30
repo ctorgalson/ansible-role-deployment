@@ -1,0 +1,20 @@
+---
+# We could use `ansible_date_time.iso8601`, but it's easier not to have to think
+# about colons in filenames/paths in e.g. macOS.
+- name: Get a filesystem-safe iso 8601 timestamp.
+  command: "date -u +'%Y-%m-%dT%H-%M-%SZ'"
+  register: deployment_deployment_8601
+
+- name: Get the list of past deployment archives still present.
+  shell: "find * -type f -prune -name '{{ deployment_directory_pattern }}' | sort -r"
+  args:
+    chdir: "{{ deployment_working_dir }}"
+  register: deployment_past_deployment_archives
+
+- name: Get the name of the current deployment directory.
+  # Even though there should only ever be ONE of these, this task anticipates
+  # that there might be more than one and saves the name of the most recent.
+  shell: "find * -type d -prune -name '{{ deployment_directory_pattern }}' | tail -n 1"
+  args:
+    chdir: "{{ deployment_working_dir }}"
+  register: deployment_last_deployment_directory

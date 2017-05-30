@@ -1,0 +1,26 @@
+---
+- include: setup.yml
+
+- include: files.yml
+
+- include: mysql.yml
+  when: deployment_database_type == 'mysql'
+
+# @todo: add some other database-specific tasks here.
+
+- name: Run application-specific deployment role.
+  include_role:
+    name: "{{ deployment_application_role }}"
+    when: deployment_application_role != ''
+
+# We may need a fallback in case THIS step fails...
+- name: Switch symlink to newest deployment directory.
+  file:
+    src: "{{ deployment_current_deployment_directory.0.dest }}/{{ deployment_git_dest_base }}"
+    dest: "{{ deployment_current_dir }}/{{ deployment_git_dest_base }}"
+    state: link
+    owner: "{{ deployment_owner }}"
+    group: "{{ deployment_group }}"
+  become: true
+
+- include: cleanup.yml

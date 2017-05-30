@@ -1,0 +1,31 @@
+---
+- name: Create new directory for files related to this deployment.
+  file:
+    path: "{{ item.dest }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  # Only one item; using vars in an object for configurability, and to keep
+  # the number of variables under control--and so we can union() lists of
+  # files below.
+  with_items: "{{ deployment_current_deployment_directory }}"
+
+- name: Clone repository to working directory.
+  git:
+    repo: "{{ deployment_git_repo }}"
+    dest: "{{ deployment_current_deployment_directory.0.dest }}/{{ deployment_git_dest_base }}"
+    accept_hostkey: "{{ deployment_git_accept_hostkey }}"
+  become: true
+
+- name: Symlink config files and assets and fix permissions in new directory.
+  file:
+    src: "{{ item.src | default('') }}"
+    dest: "{{ item.dest }}"
+    state: "{{ item.state }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode | default('') }}"
+    recurse: "{{ item.recurse | default('no') }}"
+  with_items: "{{ deployment_current_deployment_directory | union(deployment_file_operations) }}"
+  become: true

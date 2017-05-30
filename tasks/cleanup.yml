@@ -1,0 +1,37 @@
+---
+- name: Archive previous deployment.
+  command: "tar -cvzf {{ deployment_last_deployment_directory.stdout }}.tar.gz {{ deployment_last_deployment_directory.stdout }}"
+  args:
+    chdir: "{{ deployment_working_dir }}"
+    creates: "{{ deployment_last_deployment_directory.stdout }}.tar.gz"
+  when: deployment_last_deployment_directory.stdout != ''
+
+- name: Fix permissions on new tarball.
+  file:
+    path: "{{ deployment_working_dir }}/{{ deployment_last_deployment_directory.stdout }}.tar.gz"
+    state: file
+    owner: "{{ deployment_owner }}"
+    group: "{{ deployment_group }}"
+  when: deployment_last_deployment_directory.stdout != ''
+
+- name: Delete previous deployment directory.
+  file:
+    path: "{{ deployment_working_dir }}/{{ deployment_last_deployment_directory.stdout }}"
+    state: absent
+  when: deployment_last_deployment_directory.stdout != ''
+  become: true
+
+- name: Delete last past deployment archives.
+  file:
+    path: "{{ deployment_working_dir }}/{{ item.1 }}"
+    state: absent
+  with_indexed_items: "{{ deployment_past_deployment_archives.stdout_lines }}"
+  # NOTE: the number of items in deployment_past_deployment_archives is one
+  # _smaller_ than the actual number, since we have only just created the last
+  # deployment archive.
+  #
+  # Therefore, to preserve deployment_preserve_past_deployments archives, we
+  # should delete them up to the point the index equals that number minus TWO
+  # (instead of that number minus one).
+  when: deployment_delete_past_deployments and (item.0 > (deployment_preserve_past_deployments - 2))
+  become: true

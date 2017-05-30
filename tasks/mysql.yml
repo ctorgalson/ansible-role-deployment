@@ -1,0 +1,38 @@
+---
+- name: Make sure database exists.
+  mysql_db:
+    name: "{{ deployment_database_name }}"
+    state: present
+  register: deployment_database_status
+
+- name: Make sure database user with access rights exists.
+  mysql_user:
+    name: "{{ deployment_database_user }}"
+    password: "{{ deployment_database_password }}"
+    host: "{{ deployment_database_host }}"
+    priv: "{{ deployment_database_priv }}"
+    state: present
+
+
+# @todo: Convert these to a block.
+- name: Dump database to dbname.sql in LAST deployment directory.
+  mysql_db:
+    state: dump
+    name: "{{ deployment_database_name }}"
+    target: "{{ deployment_database_dump_path }}"
+  # If (deployment_database_status.changed == true), then we just created the
+  # database, so there's not a lot of point in dumping it.
+  #
+  # Note that this assumes THIS role initially creates the database. If this is
+  # not how your deployment operates, then your first deployment archive will
+  # contain an empty db dump. Beware!
+  when: not deployment_database_status.changed and deployment_last_deployment_directory.stdout != ''
+
+- name: Correct database dump permissions.
+  file:
+    path: "{{ deployment_database_dump_path }}"
+    owner: "{{ deployment_owner }}"
+    group: "{{ deployment_group }}"
+    state: file
+  # See comment previous task.
+  when: not deployment_database_status.changed and deployment_last_deployment_directory.stdout != ''
